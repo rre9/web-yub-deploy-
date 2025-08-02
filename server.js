@@ -7,7 +7,6 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const HOST = "0.0.0.0";
 
 // الحماية من السبام
 const limiter = rateLimit({
@@ -50,8 +49,7 @@ app.get("/en", (req, res) => {
     res.sendFile(path.join(__dirname, "en/homepage_3.html"));
 });
 
-
-// إرسال الإيميل وإغلاق السيرفر بعد الإرسال
+// إرسال الإيميل
 app.post("/send-email", (req, res) => {
     const { name, email, subject } = req.body;
     const message = sanitizeHtml(req.body.message);
@@ -84,7 +82,10 @@ app.post("/send-email", (req, res) => {
         }
         console.log("Email sent:", info.response);
         res.status(200).send("Success");
-
-
     });
+});
+
+// ✅ تشغيل السيرفر بدون HOST
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
