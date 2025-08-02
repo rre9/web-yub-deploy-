@@ -1,7 +1,7 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
 const path = require("path");
-const rateLimit = require("express-rate-limit");
+// const rateLimit = require("express-rate-limit");
 const sanitizeHtml = require("sanitize-html");
 require("dotenv").config();
 
@@ -9,11 +9,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // الحماية من السبام
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-});
-app.use(limiter);
+// const limiter = rateLimit({
+//     windowMs: 15 * 60 * 1000,
+//     max: 100,
+//     message: "تم إرسال عدد كبير من الطلبات. يُرجى المحاولة لاحقًا.",
+// });
+
+// app.use(limiter);
 
 // لقراءة JSON من الفورم
 app.use(express.json());
