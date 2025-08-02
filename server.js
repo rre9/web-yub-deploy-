@@ -6,8 +6,8 @@ const sanitizeHtml = require("sanitize-html");
 require("dotenv").config();
 
 const app = express();
-const PORT = 3000;
-const HOST = "localhost";
+const PORT = process.env.PORT || 3000;
+const HOST = "0.0.0.0";
 
 // الحماية من السبام
 const limiter = rateLimit({
@@ -50,10 +50,6 @@ app.get("/en", (req, res) => {
     res.sendFile(path.join(__dirname, "en/homepage_3.html"));
 });
 
-// تشغيل السيرفر
-const server = app.listen(PORT, HOST, () => {
-    console.log(`Server running on http://${HOST}:${PORT}`);
-});
 
 // إرسال الإيميل وإغلاق السيرفر بعد الإرسال
 app.post("/send-email", (req, res) => {
@@ -88,7 +84,7 @@ app.post("/send-email", (req, res) => {
         }
         console.log("Email sent:", info.response);
         res.status(200).send("Success");
-        
-        
+
+
     });
 });
