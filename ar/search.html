@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>البحث في المقالات - يقين للتأمين</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+        
+        .search-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .search-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 40px;
+            text-align: center;
+            color: white;
+        }
+        
+        .search-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .search-header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .search-box {
+            padding: 30px;
+            background: white;
+        }
+        
+        .search-input-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 20px 60px 20px 20px;
+            font-size: 18px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            direction: rtl;
+        }
+        
+        .search-input:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-size: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .results-container {
+            margin-top: 20px;
+        }
+        
+        .result-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .result-item:hover {
+            background: #e3f2fd;
+            border-color: #4facfe;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .result-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        
+        .result-content {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .result-url {
+            font-size: 14px;
+            color: #4facfe;
+            text-decoration: none;
+        }
+        
+        .highlight {
+            background-color: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .no-results-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .search-stats {
+            padding: 10px 20px;
+            background: #f1f3f4;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+    <style>
+        .dropdown-menu a.dropdown-item {
+            direction: rtl;
+            text-align: right;
+            font-family: 'Tajawal', sans-serif !important;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="search-container">
+        <div class="search-header">
+            <h1>🔍 البحث في المقالات</h1>
+            <p>ابحث في جميع مقالات التأمين والخدمات</p>
+        </div>
+
+        <div class="search-box">
+            <div class="search-input-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="اكتب كلمة البحث هنا..." autocomplete="off">
+                <span class="search-icon">🔍</span>
+            </div>
+
+            <div id="loadingIndicator" class="loading" style="display: none;">
+                جاري البحث...
+            </div>
+
+            <div id="searchStats" class="search-stats" style="display: none;"></div>
+
+            <div id="resultsContainer" class="results-container"></div>
+        </div>
+    </div>
+
+    <script>
+        let articles = [];
+        let searchTimeout;
+
+        // تحميل المقالات من ملف JSON
+        async function loadArticles() {
+            try {
+                const response = await fetch('articles.json');
+                articles = await response.json();
+                console.log('تم تحميل المقالات:', articles.length);
+            } catch (error) {
+                console.error('خطأ في تحميل المقالات:', error);
+            }
+        }
+
+        // البحث في المقالات
+        function searchArticles(query) {
+            if (!query || query.trim().length < 1) {
+                document.getElementById('resultsContainer').innerHTML = '';
+                document.getElementById('searchStats').style.display = 'none';
+                return;
+            }
+
+            // تقسيم النص إلى كلمات منفصلة (بدون حد أدنى للطول) (بدون حد أدنى للطول)
+            const searchTerms = query.trim().toLowerCase().split(/\s+/).filter(term => term.length >= 1);
+            if (searchTerms.length === 0) {
+                document.getElementById('resultsContainer').innerHTML = '';
+                document.getElementById('searchStats').style.display = 'none';
+                return;
+            }
+
+            const results = [];
+
+            articles.forEach(article => {
+                let totalMatches = 0;
+                let allMatches = [];
+
+                // البحث عن كل كلمة في العنوان والمحتوى الكامل الكامل
+                searchTerms.forEach(searchTerm => {
+                    const titleMatches = findAllAllMatches(article.title, searchTerm);
+                    const contentMatches = findAllAllMatches(article.content, searchTerm);
+
+                    totalMatches += titleMatches.length + contentMatches.length;
+
+                    // إضافة المطابقات مع تحديد نوعها
+                    titleMatches.forEach(match => {
+                        allMatches.push({
+                            ...match,
+                            type: 'title',
+                            searchTerm: searchTerm
+                        });
+                    });
+
+                    contentMatches.forEach(match => {
+                        allMatches.push({
+                            ...match,
+                            type: 'content',
+                            searchTerm: searchTerm
+                        });
+                    });
+                });
+
+                if (totalMatches > 0) {
+                    results.push({
+                        article: article,
+                        allMatches: allMatches,
+                        totalMatches: totalMatches,
+                        matchedTerms: searchTerms.filter(term =>
+                            findAllAllMatches(article.title, term).length > 0 ||
+                            findAllAllMatches(article.content, term).length > 0
+                        )
+                    });
+                }
+            });
+
+            // ترتيب النتائج حسب عدد المطابقات وعدد الكلمات المطابقة
+            results.sort((a, b) => {
+                if (b.matchedTerms.length !== a.matchedTerms.length) {
+                    return b.matchedTerms.length - a.matchedTerms.length;
+                }
+                return b.totalMatches - a.totalMatches;
+            });
+
+            displayResults(results, searchTerms, query);
+        }
+
+        // البحث الشامل ال جميعشامل عن جميع المطابقات في النص
+        function findAllAllMatches(text, searchTerm) {
+            const matches = [];
+            const lowerText = text.toLowerCase();
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            let index = 0;
+            // البحث عن المطابقات الكاملة والجزئية
+            while ((index = lowerText.indexOf(lowerSearchTerm, index)) !== -1) {
+                matches.push({
+                    index: index,
+                    context: getExtendedContext(text, index, lowerSearchTerm.length),
+                    matchType: 'exact'
+                });
+                index += 1; // البحث عن تداخلات محتملة
+            }
+
+            return matches;
+            الموسع
+        }
+
+        // الحصول على السياق الموسع المحيط بالكلمة
+        function getExtendedContext(text, index, length, contextLength = 150) {
+            const start = Math.max(0, index - contextLength);
+            const end = Math.min(text.length, index + length + contextLength);
+
+            let context = text.substring(start, end);
+
+            if (start > 0) context = '...' + context;
+            if (end < text.length) context = context + '...';
+
+            return context;
+        }
+
+        // تمييز الكلمات في النص
+        function highlightText(text, searchTerm) {
+            const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // تنظيف الرموز الخاصة للتعبير النمطي
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // عرض النتائج
+        function displayResults(results, searchTerms, query) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const searchStats = document.getElementById('searchStats');
+
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">😔</div>
+                        <p>لم يتم العثور على نتائج للبحث عن: <strong>"${query}"</strong></p>
+                        <p>جرب كلمات أخرى أو تأكد من الإملاء</p>
+                    </div>
+                `;
+                searchStats.style.display = 'none';
+                return;
+            }
+
+            // عرض إحصائيات البحث
+            const totalMatches = results.reduce((sum, result) => sum + result.totalMatches, 0);
+            const totalTermsFound = results.reduce((sum, result) => sum + result.matchedTerms.length, 0);
+            searchStats.innerHTML = `تم العثور على ${totalMatches} مطابقة لـ ${searchTerms.length} كلمة في ${results.length} مقال`;
+            searchStats.style.display = 'block';
+
+            // عرض النتائج
+            let html = '';
+            results.forEach(result => {
+                const article = result.article;
+
+                // تمييز العنوان
+                const highlightedTitle = highlightText(article.title, searchTerms.join('|'));
+
+                // أخذ أول مطابقة من المحتوى لعرضها
+                let displayContent = '';
+                if (result.allMatches.length > 0) {
+                    displayContent = highlightText(result.allMatches[0].context, searchTerms.join('|'));
+                } else {
+                    displayContent = article.content.substring(0, 150) + '...';
+                }
+
+                html += `
+                    <div class="result-item" onclick="navigateToArticle('${article.url}', '${query}')">
+                        <div class="result-title">${highlightedTitle}</div>
+                        <div class="result-content">${displayContent}</div>
+                        <div class="result-url">${article.url}</div>
+                        <small style="color: #999;">عدد المطابقات: ${result.totalMatches}</small>
+                    </div>
+                `;
+            });
+
+            resultsContainer.innerHTML = html;
+        }
+
+        // الانتقال إلى المقال
+        function navigateToArticle(url, searchTerm) {
+            const fullUrl = `${url}?q=${encodeURIComponent(searchTerm)}`;
+            window.location.href = fullUrl;
+        }
+
+        // إعداد البحث مع التأخير
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+
+                if (e.target.value.trim().length >= 1) {
+                    loadingIndicator.style.display = 'block';
+
+                    searchTimeout = setTimeout(() => {
+                        loadingIndicator.style.display = 'none';
+                        searchArticles(e.target.value);
+                    }, 150); // تقليل التأخير لاستجابة أسرع
+                } else {
+                    loadingIndicator.style.display = 'none';
+                    document.getElementById('resultsContainer').innerHTML = '';
+                    document.getElementById('searchStats').style.display = 'none';
+                }
+            });
+
+            // البحث عند الضغط على Enter
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    clearTimeout(searchTimeout);
+                    loadingIndicator.style.display = 'none';
+                    searchArticles(e.target.value);
+                }
+            });
+
+            // البحث الفوري عند التركيز إذا كان هناك نص
+            searchInput.addEventListener('focus', (e) => {
+                if (e.target.value.trim().length >= 1) {
+                    searchArticles(e.target.value);
+                }
+            });
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', async() => {
+            await loadArticles();
+            setupSearch();
+
+            // التركيز على حقل البحث
+            document.getElementById('searchInput').focus();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,52 @@
+.main-banner {
+    padding: 100px 0 60px 0;
+    background-position: center center;
+    background-size: cover;
+    overflow: hidden;
+}
+
+.main-banner .left-content h2 {
+    font-size: 36px;
+    color: #2a2a2a;
+    margin-bottom: 20px;
+}
+
+.main-banner .left-content p {
+    font-size: 15px;
+    line-height: 28px;
+    margin-bottom: 25px;
+    margin-right: 20px;
+}
+
+.main-banner .right-image img {
+    max-width: 100%;
+    height: auto;
+}
+
+
+/* Container cleanup */
+
+.container {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+
+/* Button style fix */
+
+.border-first-button a {
+    display: inline-block !important;
+    padding: 10px 20px !important;
+    color: #4da6e7 !important;
+    border: 1px solid #4da6e7 !important;
+    border-radius: 23px;
+    font-weight: 500 !important;
+    letter-spacing: 0.3px !important;
+    transition: all .5s;
+}
+
+.border-first-button a:hover {
+    background-color: #4da6e7;
+    color: #fff !important;
+}
